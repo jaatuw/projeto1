@@ -12,6 +12,19 @@ int escolha;
 
 int id = 1;
 
+void SalvaUser(struct usuario *grupo, int *idVetor) {
+    FILE *dados;
+    dados = fopen("dados.txt", "w");
+    if (dados == NULL) {
+        printf("Erro ao abrir o arquivo!\n");
+        return;
+    }
+    fprintf(dados, "Nome: %s\nIdade: %d\nSaldo: %.2f\n\n", 
+            grupo[id].nome, grupo[id].idade, grupo[id].saldo);
+
+    fclose(dados);
+}
+
 void menu() { 
     
     printf("1.Insercao de um novo usuario: \n");
@@ -35,7 +48,7 @@ void confereid(int *idVetor, int *qtdu) {
 }
 }
 
-void insereuser (struct usuario *grupo, int *idVetor, int *qtdu) {
+void insereuser(struct usuario *grupo, int *idVetor, int *qtdu) {
     scanf(" %[^,], %d, %f", grupo[id].nome, &grupo[id].idade, &grupo[id].saldo);
     printf("%s, %d, %.2f\n", grupo[id].nome, grupo[id].idade, grupo[id].saldo);
     idVetor[id] = id;
@@ -44,7 +57,7 @@ void insereuser (struct usuario *grupo, int *idVetor, int *qtdu) {
 }
 
 
-void insereusers(struct usuario *grupo, int *idVetor, int *qtdu) {
+void inserevariosuser(struct usuario *grupo, int *idVetor, int *qtdu) {
     printf("Quantos usuarios quer inserir?\n");
     int quantidade;
     scanf("%d", &quantidade);
@@ -65,9 +78,11 @@ void buscauser(struct usuario *grupo, int *idVetor, int *qtdu) {
     {
          printf("%s, %d, %.2f\n", grupo[idprocurado].nome, grupo[idprocurado].idade, grupo[idprocurado].saldo);
     }
-    
-    
+    else
+        printf("O ID nao esta cadastrado\n");   
 }
+
+
 int main () {
 
     int *idVetor;
@@ -81,15 +96,15 @@ int main () {
         {
         case 1:
             insereuser(grupo, idVetor, &qtdu);
+            SalvaUser(grupo, idVetor);
             break;
         case 2:
-            insereusers(grupo, idVetor, &qtdu);
+            inserevariosuser(grupo, idVetor, &qtdu);
             break;
         case 3:
             buscauser(grupo, idVetor, &qtdu);
             break;
         case 4:
-           // transferencia();
             break;
         case 5:
             //removeuser();

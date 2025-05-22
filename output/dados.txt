@@ -1,0 +1,4 @@
+Nome: a_fe\win64;C:\Program Files (x86)\codeblocks\MinGW\bin;C:\Users\lucas\AppData\Local\Programs\Python\Python313\python.exe;C:\Users\lucas\AppData\Local\Programs\Python\Python313\Scripts;C:\Users\lucas\AppData\Roaming\npm;C:\intelFPGA\19.1\modelsim_ase\win32aloem
+Idade: 1752463696
+Saldo: 0.00
+
