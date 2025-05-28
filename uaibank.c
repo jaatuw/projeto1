@@ -3,36 +3,145 @@
 #include <locale.h>
 
 
-struct usuario // declarando a struct
+typedef struct // declarando a struct
     {
         char nome[100];
         int idade;
         float saldo;
-    };
+    } usuario;
 int escolha;
 
-void SalvaUser(struct usuario *grupo, int *idVetor, int id) {
-    
+
+void removeusertexto (int iddeletado) {
     FILE *dados;
-    dados = fopen("dados.txt", "a");
-    if (dados == NULL) {
+    FILE *temp;
+    dados = fopen("dados.txt", "r");
+    temp = fopen("temp.txt", "w");
+    if (dados == NULL || temp == NULL) {
         printf("Erro ao abrir o arquivo!\n");
         return;
     }
+    char linha[100];
+    char nome[100];
+    int idade;
+    float saldo;
+    int contador = 0;
     
-    fprintf(dados, "ID: %d\nNome: %s\nIdade: %d\nSaldo: %.2f\n\n", id+1, grupo[id].nome, grupo[id].idade, grupo[id].saldo);
+    while (fgets(linha, sizeof(linha), dados))
+    {
+        sscanf(linha, " %[^,], %d, %f", nome, &idade, &saldo);
+        if (contador == iddeletado)
+        {
+            contador++;
+            fprintf(temp, "\n");
+            continue;   
+        }
+        fprintf(temp, "%s, %d, %.2f\n", nome, idade, saldo);
+        contador++;
+    }
 
     fclose(dados);
+    fclose(temp);
+
+    remove("dados.txt");
+    rename("temp.txt", "dados.txt");
+}
+
+
+void SalvaUser(usuario *grupo, int *idVetor, int id, int *qtdu) {
+    
+    FILE *dados;
+    FILE *temp;
+    dados = fopen("dados.txt", "r");
+    temp = fopen("temp.txt", "w");
+    if (dados == NULL || temp == NULL) {
+        printf("Erro ao abrir o arquivo!\n");
+        return;
+    }
+
+    if (dados == NULL) {
+        fprintf(temp, "%s, %d, %.2f\n", grupo[id].nome, grupo[id].idade, grupo[id].saldo);
+        fclose(temp);
+        rename("temp.txt", "dados.txt");
+        return;
+    }
+
+        
+    char linha[100];
+    char nome[100];
+    int idade;
+    float saldo;
+    int contador = 0;
+    int usuario_atualizado = 0;
+
+    while (fgets(linha, sizeof(linha), dados)) {
+        if (contador != id)
+        {
+            sscanf(linha, " %[^,], %d, %f", nome, &idade, &saldo);
+            fprintf(temp, "%s, %d, %.2f\n", nome, idade, saldo);
+        } else {
+            fprintf(temp, "%s, %d, %.2f\n", grupo[id].nome, grupo[id].idade, grupo[id].saldo);
+            usuario_atualizado = 1;
+        }
+        contador++;
+    }
+
+    if (!usuario_atualizado) {
+        fprintf(temp, "%s, %d, %.2f\n", grupo[id].nome, grupo[id].idade, grupo[id].saldo);
+    }
+
+    fclose(dados);
+    fclose(temp);
+
+    remove("dados.txt");
+    rename("temp.txt", "dados.txt");
+}
+
+
+void mudarSaldo(int id1, int id2, float quantia) {
+
+    FILE *dados;
+    FILE *temp;
+    dados = fopen("dados.txt", "r");
+    temp = fopen("temp.txt", "w");
+    if (dados == NULL || temp == NULL) {
+        printf("Erro ao abrir o arquivo!\n");
+        return;
+    }
+    char linha[100];
+    char nome[100];
+    int idade;
+    float saldo;
+    int contador = 0;
+    
+    while (fgets(linha, sizeof(linha), dados))
+    {
+        sscanf(linha, " %[^,], %d, %f", nome, &idade, &saldo);
+
+        if (contador == id1) {
+            saldo -= quantia;
+        } else if (contador == id2) {
+            saldo += quantia;
+        }
+        contador++;
+        fprintf(temp, "%s, %d, %.2f\n", nome, idade, saldo);
+    }
+
+    fclose(dados);
+    fclose(temp);
+
+    remove("dados.txt");
+    rename("temp.txt", "dados.txt");
 }
 
 void menu() { 
     
-    printf("1.Insercao de um novo usuario: \n");
-    printf("2.Insercao de varios usuarios: \n");
-    printf("3.Busca de um usuario por id: \n");
-    printf("4.Transferencias entre usuarios: \n");
-    printf("5.Remocao de um usuario por id: \n");
-    printf("6.Sair \n");
+    printf("\n\n[1.] Insercao de um novo usuario: \n");
+    printf("[2.] Insercao de varios usuarios: \n");
+    printf("[3.] Busca de um usuario por id: \n");
+    printf("[4.] Transferencias entre usuarios: \n"); 
+    printf("[5.] Remocao de um usuario por id: \n");
+    printf("[6.] Sair \n\n");
     
     do {
         scanf("%d", &escolha);
@@ -43,7 +152,7 @@ void menu() {
 
 int confereid(int *idVetor, int *qtdu) {
     for (int i = 0; i < (*qtdu)+1; i++){
-    if (idVetor[i] == 1 || i == (*qtdu)) { 
+    if (idVetor[i] == 1) { 
         //adicionar memoria
     } else {
         return i;
@@ -51,19 +160,19 @@ int confereid(int *idVetor, int *qtdu) {
 }
 }
 
-void insereuser(struct usuario *grupo, int *idVetor, int *qtdu) {
+void insereuser(usuario *grupo, int *idVetor, int *qtdu) {
     int id = confereid(idVetor, qtdu);
     do {
         printf("Insira seus dados da seguinte maneira: Nome, Idade(0-100), Valor da conta\n");
         scanf(" %[^,], %d, %f", grupo[id].nome, &grupo[id].idade, &grupo[id].saldo);
     }while (grupo[id].idade < 0 || grupo[id].idade > 100);
     idVetor[id] = 1;
-    printf("Seu ID cadastrado eh %d\n", id+1);
+    printf("Seu ID cadastrado: %d\n", id+1);
     (*qtdu)++;
-    SalvaUser(grupo, idVetor, id);
+    SalvaUser(grupo, idVetor, id, qtdu);
 }
 
-void inserevariosuser(struct usuario *grupo, int *idVetor, int *qtdu) {
+void inserevariosuser(usuario *grupo, int *idVetor, int *qtdu) {
     printf("Quantos usuarios quer inserir?\n");
     int quantidade;
     scanf("%d", &quantidade);
@@ -73,7 +182,7 @@ void inserevariosuser(struct usuario *grupo, int *idVetor, int *qtdu) {
 }
 
 
-void buscauser(struct usuario *grupo, int *idVetor, int *qtdu) {
+void buscauser(usuario *grupo, int *idVetor, int *qtdu) {
     printf("Qual usuario quer buscar?\n");
     int idprocurado;
     scanf("%d", &idprocurado);
@@ -85,27 +194,53 @@ void buscauser(struct usuario *grupo, int *idVetor, int *qtdu) {
         printf("O ID nao esta cadastrado\n");   
 }
 
-void removeuser(struct usuario *grupo, int *idVetor, int *qtdu) {
+void removeuser(usuario *grupo, int *idVetor, int *qtdu) {
     printf("Qual usuario voce quer remover?\n");
     int removerid;
     scanf("%d", &removerid);
     if (idVetor[(removerid-1)] == 0) {
-        printf("Erro: Usuário não encontrado.\n");
+        printf("Erro: Usuario nao encontrado.\n");
     }
     else {
         idVetor[(removerid-1)] = 0;
         (*qtdu)--;
-        printf("Usuario %d removido com sucesso", removerid);
+        printf("Usuario %d removido com sucesso\n", removerid);
     }
+    removeusertexto(removerid-1);
 }
 
+void transferencia(usuario *grupo, int *idVetor) {
+    printf("Insira de qual usuario quer retirar, depositar e quantia (<retirada> <depositar> <quantia>)\n");
+    int usuario1, usuario2;
+    float quantia;
+    scanf("%d %d %f", &usuario1, &usuario2, &quantia);
+
+    if (idVetor[usuario1-1] == 0 || idVetor[usuario2-1] == 0)
+    {
+        printf("Algum ou ambos dos usuarios nao existem");
+        return;
+    }
+    
+    if (grupo[usuario1-1].saldo < quantia)
+    {
+        printf("Saldo Insuficiente\n");
+        return;
+    } else {
+        grupo[usuario1-1].saldo -= quantia;
+        grupo[usuario2-1].saldo += quantia;
+        printf("A sua transferencia de R$ %.2f foi realizada do usuario %d para o usuario %d!", quantia, usuario1, usuario2);
+    } 
+
+    mudarSaldo(usuario1-1, usuario2-1, quantia);
+    
+}
 int main () {
 
 
     int *idVetor;
     idVetor = (int *) calloc(10, sizeof(int));
     int qtdu = 0;
-    struct usuario *grupo = (struct usuario*) malloc(10*sizeof(struct usuario));
+    usuario *grupo = (usuario*) malloc(10*sizeof(usuario));
 
     if(idVetor == NULL || grupo == NULL) {
         printf("Falha ao alocar memoria");
@@ -126,13 +261,14 @@ int main () {
             buscauser(grupo, idVetor, &qtdu);
             break;
         case 4:
-            //transferencia();
+            transferencia(grupo, idVetor);
             break;
         case 5:
             removeuser(grupo, idVetor, &qtdu);
             break;
         case 6:
             exit(0);
+            
             break;
         }
     } while (escolha != 6);
