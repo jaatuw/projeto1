@@ -49,7 +49,7 @@ void removeusertexto (int iddeletado) {
 }
 
 
-void SalvaUser(usuario *grupo, int *idVetor, int id, int *qtdu) {
+void SalvaUser(usuario *grupo, int id) {
     
     FILE *dados;
     FILE *temp;
@@ -206,7 +206,7 @@ void insereuser(usuario *grupo, int *idVetor, int *qtdu) {
     idVetor[id] = 1;
     printf("Seu ID cadastrado: %d\n", id + 1);
     (*qtdu)++;
-    SalvaUser(grupo, idVetor, id, qtdu);
+    SalvaUser(grupo, id);
 }
 
 void inserevariosuser(usuario *grupo, int *idVetor, int *qtdu) {
@@ -223,7 +223,7 @@ void inserevariosuser(usuario *grupo, int *idVetor, int *qtdu) {
 }
 
 
-void buscauser(usuario *grupo, int *idVetor, int *qtdu) {
+void buscauser(usuario *grupo, int *idVetor) {
 
     printf("Qual usuario quer buscar?\n");
 
@@ -240,7 +240,7 @@ void buscauser(usuario *grupo, int *idVetor, int *qtdu) {
         printf("O ID nao esta cadastrado\n");   
 }
 
-void removeuser(usuario *grupo, int *idVetor, int *qtdu) {
+void removeuser(int *idVetor, int *qtdu) {
     printf("Qual usuario voce quer remover?\n");
     int removerid;
     scanf("%d", &removerid);
@@ -288,17 +288,38 @@ void transferencia(usuario *grupo, int *idVetor) {
     
 }
 int main () {
+    int users_max = 20;
 
-    setlocale(LC_ALL, "Portuguese_Brazil");
+    int *qtdu = malloc(sizeof(int));
+        if (qtdu == NULL) {
+            printf("Erro ao alocar memória para qtdu\n");
+            return 1;
+        }
+    *qtdu = 0;
 
-    int *idVetor;
-    idVetor = (int *) calloc(10, sizeof(int));
-    int qtdu = 0;
-    usuario *grupo = (usuario*) malloc(10*sizeof(usuario));
+    usuario *grupo = malloc(users_max * sizeof(usuario));
+    if (grupo == NULL) {
+        printf("Erro ao alocar memória para grupo\n");
+        free(qtdu);
+        return 1;
+    }
 
-    if(idVetor == NULL || grupo == NULL) {
-        printf("Falha ao alocar memoria");
-        exit(1);
+    int *idVetor = malloc(users_max * sizeof(int));
+    if (grupo == NULL) {
+        printf("Erro ao alocar memória para id\n");
+        free(qtdu);
+        return 1;
+    }
+
+    if (*qtdu >= users_max) {
+            users_max *= 2;
+            grupo = realloc(grupo, users_max * sizeof(usuario));
+            idVetor = realloc(idVetor, users_max* sizeof(int));
+            if (grupo == NULL || idVetor == NULL) {
+                printf("Erro ao realocar memória para grupo ou para o id\n");
+                free(qtdu);
+                return 1;
+            }
     }
 
     do {
@@ -306,19 +327,19 @@ int main () {
         switch (escolha)
         {
         case 1:
-            insereuser(grupo, idVetor, &qtdu);
+            insereuser(grupo, idVetor, qtdu);
             break;
         case 2:
-            inserevariosuser(grupo, idVetor, &qtdu);
+            inserevariosuser(grupo, idVetor, qtdu);
             break;
         case 3:
-            buscauser(grupo, idVetor, &qtdu);
+            buscauser(grupo, idVetor);
             break;
         case 4:
             transferencia(grupo, idVetor);
             break;
         case 5:
-            removeuser(grupo, idVetor, &qtdu);
+            removeuser(idVetor, qtdu);
             break;
         case 6:
             exit(0);
@@ -328,4 +349,5 @@ int main () {
     } while (escolha != 6);
     free(idVetor);
     free(grupo);
+    free(qtdu);
 }
