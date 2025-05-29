@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <locale.h>
+#include <string.h>
 
 
 typedef struct // declarando a struct
@@ -29,14 +30,14 @@ void removeusertexto (int iddeletado) {
     
     while (fgets(linha, sizeof(linha), dados))
     {
-        sscanf(linha, " %[^,], %d, %f", nome, &idade, &saldo);
         if (contador == iddeletado)
         {
-            contador++;
-            fprintf(temp, "\n");
-            continue;   
+            fprintf(temp, "\n"); 
+        } else if(sscanf(linha, " %[^,], %d, %f", nome, &idade, &saldo) != 3) {
+            fputs(linha, temp);
+        } else {
+            fprintf(temp, "%s, %d, %.2f\n", nome, idade, saldo);
         }
-        fprintf(temp, "%s, %d, %.2f\n", nome, idade, saldo);
         contador++;
     }
 
@@ -59,34 +60,26 @@ void SalvaUser(usuario *grupo, int *idVetor, int id, int *qtdu) {
         return;
     }
 
-    if (dados == NULL) {
-        fprintf(temp, "%s, %d, %.2f\n", grupo[id].nome, grupo[id].idade, grupo[id].saldo);
-        fclose(temp);
-        rename("temp.txt", "dados.txt");
-        return;
-    }
-
-        
     char linha[100];
     char nome[100];
     int idade;
     float saldo;
     int contador = 0;
-    int usuario_atualizado = 0;
+    int usuarioatualizado = 0;
 
     while (fgets(linha, sizeof(linha), dados)) {
         if (contador != id)
         {
-            sscanf(linha, " %[^,], %d, %f", nome, &idade, &saldo);
-            fprintf(temp, "%s, %d, %.2f\n", nome, idade, saldo);
+            fputs(linha, temp);
         } else {
+            sscanf(linha, " %[^,], %d, %f", nome, &idade, &saldo);
             fprintf(temp, "%s, %d, %.2f\n", grupo[id].nome, grupo[id].idade, grupo[id].saldo);
-            usuario_atualizado = 1;
+            usuarioatualizado = 1;
         }
         contador++;
     }
 
-    if (!usuario_atualizado) {
+    if (!usuarioatualizado) {
         fprintf(temp, "%s, %d, %.2f\n", grupo[id].nome, grupo[id].idade, grupo[id].saldo);
     }
 
@@ -120,11 +113,15 @@ void mudarSaldo(int id1, int id2, float quantia) {
 
         if (contador == id1) {
             saldo -= quantia;
+            fprintf(temp, "%s, %d, %.2f\n", nome, idade, saldo);
         } else if (contador == id2) {
             saldo += quantia;
+            fprintf(temp, "%s, %d, %.2f\n", nome, idade, saldo);
+        } else {
+            fputs(linha, temp);
         }
         contador++;
-        fprintf(temp, "%s, %d, %.2f\n", nome, idade, saldo);
+        
     }
 
     fclose(dados);
@@ -136,6 +133,8 @@ void mudarSaldo(int id1, int id2, float quantia) {
 
 void menu() { 
     
+    char linha[10];
+
     printf("\n\n[1.] Insercao de um novo usuario: \n");
     printf("[2.] Insercao de varios usuarios: \n");
     printf("[3.] Busca de um usuario por id: \n");
@@ -144,11 +143,17 @@ void menu() {
     printf("[6.] Sair \n\n");
     
     do {
-        scanf("%d", &escolha);
-    }while(escolha < 1 || escolha > 6);
-    
-   
-}
+        if (fgets(linha, sizeof(linha), stdin) == NULL) {
+            printf("Erro na leitura. Tente novamente.\n");
+            linha[strcspn(linha, "\n")] = 0;
+            continue;
+        }
+        if (sscanf(linha, "%d", &escolha) != 1) {
+            printf("Entrada invalida. Digite um numero de 1 a 6.\n");
+            continue;
+        }
+        } while(escolha < 1 || escolha > 6);
+    } 
 
 int confereid(int *idVetor, int *qtdu) {
     for (int i = 0; i < (*qtdu)+1; i++){
@@ -162,20 +167,56 @@ int confereid(int *idVetor, int *qtdu) {
 
 void insereuser(usuario *grupo, int *idVetor, int *qtdu) {
     int id = confereid(idVetor, qtdu);
+    int entradas;
+    char linha[200];
+    char nome[100];
+    int idade;
+    float saldo;
+
     do {
         printf("Insira seus dados da seguinte maneira: Nome, Idade(0-100), Valor da conta\n");
-        scanf(" %[^,], %d, %f", grupo[id].nome, &grupo[id].idade, &grupo[id].saldo);
-    }while (grupo[id].idade < 0 || grupo[id].idade > 100);
+
+        if (fgets(linha, sizeof(linha), stdin) == NULL) {
+            printf("Erro na leitura da entrada. Tente novamente.\n");
+            continue;
+        }
+
+        linha[strcspn(linha, "\n")] = '\0';
+
+        entradas = sscanf(linha, " %99[^,], %d, %f", nome, &idade, &saldo);
+
+        if (entradas != 3) {
+            printf("Entrada invalida. Certifique-se de digitar no formato correto.\n");
+            continue;
+        }
+
+        if (idade < 0 || idade > 100) {
+            printf("Idade inválida. Deve estar entre 0 e 100.\n");
+            continue;
+        }
+
+        strcpy(grupo[id].nome, nome);
+        grupo[id].idade = idade;
+        grupo[id].saldo = saldo;
+
+        break;
+
+    } while (1);
+
     idVetor[id] = 1;
-    printf("Seu ID cadastrado: %d\n", id+1);
+    printf("Seu ID cadastrado: %d\n", id + 1);
     (*qtdu)++;
     SalvaUser(grupo, idVetor, id, qtdu);
 }
 
 void inserevariosuser(usuario *grupo, int *idVetor, int *qtdu) {
+    
     printf("Quantos usuarios quer inserir?\n");
     int quantidade;
     scanf("%d", &quantidade);
+
+    while (getchar() != '\n'); 
+
     for (int i = 0; i < quantidade; i++) {
         insereuser(grupo, idVetor, qtdu);
     }
@@ -183,9 +224,14 @@ void inserevariosuser(usuario *grupo, int *idVetor, int *qtdu) {
 
 
 void buscauser(usuario *grupo, int *idVetor, int *qtdu) {
+
     printf("Qual usuario quer buscar?\n");
+
     int idprocurado;
     scanf("%d", &idprocurado);
+
+    while (getchar() != '\n'); 
+
     if (idVetor[idprocurado-1] == 1)
     {
         printf("%s, %d, %.2f\n", grupo[idprocurado-1].nome, grupo[idprocurado-1].idade, grupo[idprocurado-1].saldo);
@@ -198,6 +244,9 @@ void removeuser(usuario *grupo, int *idVetor, int *qtdu) {
     printf("Qual usuario voce quer remover?\n");
     int removerid;
     scanf("%d", &removerid);
+
+    while (getchar() != '\n'); 
+
     if (idVetor[(removerid-1)] == 0) {
         printf("Erro: Usuario nao encontrado.\n");
     }
@@ -210,10 +259,14 @@ void removeuser(usuario *grupo, int *idVetor, int *qtdu) {
 }
 
 void transferencia(usuario *grupo, int *idVetor) {
+
     printf("Insira de qual usuario quer retirar, depositar e quantia (<retirada> <depositar> <quantia>)\n");
     int usuario1, usuario2;
     float quantia;
+
     scanf("%d %d %f", &usuario1, &usuario2, &quantia);
+
+    while (getchar() != '\n'); 
 
     if (idVetor[usuario1-1] == 0 || idVetor[usuario2-1] == 0)
     {
@@ -236,6 +289,7 @@ void transferencia(usuario *grupo, int *idVetor) {
 }
 int main () {
 
+    setlocale(LC_ALL, "Portuguese_Brazil");
 
     int *idVetor;
     idVetor = (int *) calloc(10, sizeof(int));
